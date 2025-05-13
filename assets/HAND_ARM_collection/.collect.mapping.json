@@ -1,0 +1,23 @@
+{
+    "version": "1.0",
+    "file_records": [
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/FrankaEmika/Props/panda_hand.usd",
+            "source_hash": "7e748d0a300892d9e39284a2d377c5972f798cb3",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/FrankaEmika/Props/panda_hand.usd",
+            "target_hash": "696c510bb39dc0f999225a18e9651aa614897768"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/FrankaEmika/Props/panda_leftfinger.usd",
+            "source_hash": "03a92dc88cacba6f5133e2f4e6cdb5620cb610b0",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/FrankaEmika/Props/panda_leftfinger.usd",
+            "target_hash": "87f2294da5c0b54e18b2ec997ac9a4577d345ecf"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/FrankaEmika/Props/panda_rightfinger.usd",
+            "source_hash": "9c03a3c8c6c4a2338faa22706b22014614673894",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/FrankaEmika/Props/panda_rightfinger.usd",
+            "target_hash": "dd0048aeb147606ee3a353471e479625c16a42a7"
+        }
+    ]
+}
