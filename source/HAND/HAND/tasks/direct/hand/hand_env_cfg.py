@@ -18,7 +18,6 @@ from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg, RigidOb
 from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sim import SimulationCfg
-from isaaclab.sim.spawners import CuboidCfg, PreviewSurfaceCfg, RigidBodyPropertiesCfg, MassPropertiesCfg, CollisionPropertiesCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
@@ -73,7 +72,7 @@ class HandEnvCfg(DirectRLEnvCfg):
         prim_path="{ENV_REGEX_NS}/Workstation",
         init_state=RigidObjectCfg.InitialStateCfg(
             pos=(0.0, 0.0, workstation_size[2] / 2.0),
-            orientation=(1.0, 0.0, 0.0, 0.0),
+            rot=(1.0, 0.0, 0.0, 0.0),
         ),
         spawn=sim_utils.CuboidCfg(
             size=workstation_size,
@@ -92,6 +91,12 @@ class HandEnvCfg(DirectRLEnvCfg):
     )
     
     # robot(s)
+    # DualArm
+    right_arm_init_pos = (ARM_DIS / 2, 0.0, workstation_size[2])
+    right_arm_init_rot = (0.0, 0.0, 0.0, 1.0)
+    left_arm_init_pos = (-ARM_DIS / 2, 0.0, workstation_size[2])
+    left_arm_init_rot = (1.0, 0.0, 0.0, 0.0)
+    
     right_arm = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/RightArm",
         spawn=sim_utils.UsdFileCfg(
@@ -114,10 +119,10 @@ class HandEnvCfg(DirectRLEnvCfg):
                 "panda_joint5": -1.841,
                 "panda_joint6": 1.003,
                 "panda_joint7": 0.469,
-                "j_*_*": 0.0,
+                "j_.*_.*": 0.0,
             },
-            pos=(ARM_DIS / 2, 0.0, workstation_size[2]),
-            rot=(0.0, 0.0, 0.0, 1.0),
+            pos = right_arm_init_pos,
+            rot = right_arm_init_rot,
         ),
         actuators={
             "arm": ImplicitActuatorCfg(
@@ -173,10 +178,10 @@ class HandEnvCfg(DirectRLEnvCfg):
                 "panda_joint5": -1.841,
                 "panda_joint6": 1.003,
                 "panda_joint7": 0.469,
-                "j_*_*": 0.0,
+                "j_.*_.*": 0.0,
             },
-            pos=(-ARM_DIS / 2, 0.0, workstation_size[2]),
-            rot=(1.0, 0.0, 0.0, 0.0),
+            pos = left_arm_init_pos,
+            rot = left_arm_init_rot,
         ),
         actuators={
             "arm": ImplicitActuatorCfg(
@@ -236,5 +241,5 @@ class HandEnvCfg(DirectRLEnvCfg):
     finger_reward_scale = 2.0
     
     
-if __name__ == "__main__":
-    pass
+# if __name__ == "__main__":
+#     pass

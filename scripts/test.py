@@ -1,3 +1,4 @@
+
 import argparse
 
 from isaaclab.app import AppLauncher
@@ -22,14 +23,31 @@ import torch
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets import AssetBaseCfg
-from isaaclab.assets.articulation import ArticulationCfg
+from isaaclab.assets import Articulation, ArticulationCfg, RigidObject, RigidObjectCfg
 from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
 
 from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
 
 
-# TODO: import your Cfg to view
-from .hand_env_cfg import HandEnvCfg
+# TODO: import your EnvCfg to view
+from HAND.tasks.direct.hand.hand_env_cfg import HandEnvCfg, ARM_DIS, ASSETS_DIR
+# from hand_env_cfg import HandEnvCfg, ARM_DIS, ASSETS_DIR
 
-env = DirectRLEnv(cfg=HandEnvCfg())
-env.reset()
+
+
+def main():
+    cfg = HandEnvCfg()
+    left_arm_cfg = cfg.left_arm
+    
+    left_arm_cfg = left_arm_cfg.replace(prim_path="/World/LeftArm")
+    
+    left_arm = Articulation(left_arm_cfg)
+    res = left_arm.find_bodies("panda_link7")[0][0]
+    
+    print("Bodies Name: ", left_arm.body_names)
+    print("Left Arm Body: ", res)
+    
+if __name__ == "__main__":
+    # Run this in terminal: python minimal_viewer.py --num_envs 5 --livestream 0
+    main()
+    simulation_app.close()
