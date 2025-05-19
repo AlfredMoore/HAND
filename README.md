@@ -1,3 +1,49 @@
+# Isaac Simulation for HAND project
+
+## Intro
+[Link]{https://isaac-sim.github.io/IsaacLab/main/source/setup/ecosystem.html}
+
+Omniverse, Isaac Sim, Isaac Lab
+
+## How to Use
+### 1. Omniverse 
+Omniverse is a tool to edit and view USD files, where urdf and mjcf model files are also supported by import.
+
+It is well integrated in Isaac Sim. After downloading Isaac Sim, run this
+```bash
+cd <path to isaac-sim folder>
+./isaac-sim.selector.sh
+```
+
+### 2. Isaac Sim
+Phycical simulation engine. [Installation]{https://docs.isaacsim.omniverse.nvidia.com/latest/installation/download.html}
+
+Tutorial [Link]{https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/quickstart_isaacsim.html}
+
+### 3. Isaac Lab
+A RL platform built on Isaac Sim. It can be installde by pip or docker, and I recommend docker installation [Link]{https://isaac-sim.github.io/IsaacLab/main/source/deployment/docker.html}
+
+How it works [Link]{https://isaac-sim.github.io/IsaacLab/main/source/overview/core-concepts/task_workflows.html}
+
+Build your own Env [Link]{https://isaac-sim.github.io/IsaacLab/main/source/tutorials/03_envs/create_direct_rl_env.html}
+
+# Progress
+## Dexterous Manipulation
+- [x] Setting up Scenario 
+- [ ] Setting up Task
+    - [ ] Peanut Butter Jar randwom generation
+    - [ ] When succeed or fail or overtime
+- [ ] Setting up Reward function
+
+## Learning Primitives from Demostration
+Doubious feasibility
+- [ ] Literature support
+
+Based on scenario and task 
+- [ ] Mapping hand activity to gripper
+- [ ] Imitation Learning function
+
+
 # Template for Isaac Lab Projects
 
 ## Overview
