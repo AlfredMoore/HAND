@@ -42,12 +42,6 @@ class HandEnv(DirectRLEnv):
     def __init__(self, cfg: HandEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
 
-        # self._cart_dof_idx, _ = self.robot.find_joints(self.cfg.cart_dof_name)
-        # self._pole_dof_idx, _ = self.robot.find_joints(self.cfg.pole_dof_name)
-
-        # self.joint_pos = self.robot.data.joint_pos
-        # self.joint_vel = self.robot.data.joint_vel
-
         def get_env_local_pose(env_pos: torch.Tensor, xformable: UsdGeom.Xformable, device: torch.device):
             """
             Compute pose in env-local coordinates
@@ -124,7 +118,7 @@ class HandEnv(DirectRLEnv):
             (self.num_envs, self._right_arm.num_joints), 
             device=self.device
         )
-        
+
         right_arm_ee_pose = get_env_local_pose(
             self.scene.env_origins[0],
             UsdGeom.Xformable(stage.GetPrimAtPath("/World/envs/env_0/RightArm/panda_instanceable/panda_link7")),
@@ -146,19 +140,6 @@ class HandEnv(DirectRLEnv):
             UsdGeom.Xformable(stage.GetPrimAtPath("/World/envs/env_0/RightArm/dg3f/l_3_4")),
             self.device,
         )
-        
-        # Dual Arm
-        # auxiliary limits for action, observation and rewards from env_0
-        # robot_dof_lower_limits shape: (2*num_joints, )
-        self.robot_dof_lower_limits = torch.cat((self.left_arm_dof_lower_limits, self.right_arm_dof_lower_limits))
-        self.robot_dof_upper_limits = torch.cat((self.left_arm_dof_upper_limits, self.right_arm_dof_upper_limits))
-        self.robot_dof_speed_scales = torch.cat((self.left_arm_dof_speed_scales, self.right_arm_dof_speed_scales))
-        
-        self.robot_dof_targets = torch.zeros(
-            (self.num_envs, self._left_arm.num_joints + self._right_arm.num_joints),
-            device=self.device
-        )
-
         
         # TODO: grasp pose variables for reward function
         # TODO: twist pose variables for reward function
@@ -217,17 +198,28 @@ class HandEnv(DirectRLEnv):
         # Action scaling
         # actions: (left_arm+right_arm , )
         self.actions = actions.clone().clamp(-1.0, 1.0)
-        # (num_envs, all_joints) + (all_joints,) * (num_envs, all_joints)
-        targets = self.robot_dof_targets + self.robot_dof_speed_scales * self.dt * self.actions * self.cfg.action_scale
-        self.robot_dof_targets[:] = torch.clamp(targets, self.robot_dof_lower_limits, self.robot_dof_upper_limits)
-
+        
+        # left_arm
+        left_arm_actions = self.actions[:, :self._left_arm.num_dofs]
+        left_arm_targets = self.left_arm_dof_targets + self.left_arm_dof_speed_scales * self.dt * left_arm_actions * self.cfg.action_scale
+        self.left_arm_dof_targets[:] = torch.clamp(left_arm_targets, self.left_arm_dof_lower_limits, self.left_arm_dof_upper_limits)
+        
+        # right_arm
+        right_arm_actions = self.actions[:, self._left_arm.num_dofs:]
+        right_arm_targets = self.right_arm_dof_targets + self.right_arm_dof_speed_scales * self.dt * right_arm_actions * self.cfg.action_scale
+        self.right_arm_dof_targets[:] = torch.clamp(right_arm_targets, self.right_arm_dof_lower_limits, self.right_arm_dof_upper_limits)
+        
     def _apply_action(self) -> None:
-        self.robot.set_joint_effort_target(self.actions * self.cfg.action_scale, joint_ids=self._cart_dof_idx)
+        # left_arm
+        self._left_arm.set_joint_position_target(self.left_arm_dof_targets)
+        
+        # right_arm
+        self._right_arm.set_joint_position_target(self.right_arm_dof_targets)
 
 
     # post-physics step calls
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
-        # TODO: terminated logic. When succeed
+        # TODO: terminated logic. When succeed, the bottle has been twist off
         terminated = ...
         
         # TODO: truncated logic
@@ -268,58 +260,104 @@ class HandEnv(DirectRLEnv):
     
     def _reset_idx(self, env_ids: torch.Tensor | None):
         super()._reset_idx(env_ids)
+        
         # robot state
-        joint_pos = self._left_arm.data.default_joint_pos[env_ids] + sample_uniform(
+        # left arm
+        left_joint_pos = self._left_arm.data.default_joint_pos[env_ids] + sample_uniform(
             -0.125,
             0.125,
             (len(env_ids), self._left_arm.num_joints),
             self.device,
         )
-        joint_pos = torch.clamp(joint_pos, self.robot_dof_lower_limits, self.robot_dof_upper_limits)
-        joint_vel = torch.zeros_like(joint_pos)
-        self._robot.set_joint_position_target(joint_pos, env_ids=env_ids)
-        self._robot.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+        left_joint_pos = torch.clamp(left_joint_pos, self.left_arm_dof_lower_limits, self.left_arm_dof_upper_limits)
+        left_joint_vel = torch.zeros_like(left_joint_pos)
+        self._left_arm.set_joint_position_target(left_joint_pos, env_ids=env_ids)
+        self._left_arm.write_joint_state_to_sim(left_joint_pos, left_joint_vel, env_ids=env_ids)
+        
+        # right arm
+        right_joint_pos = self._left_arm.data.default_joint_pos[env_ids] + sample_uniform(
+            -0.125,
+            0.125,
+            (len(env_ids), self._right_arm.num_joints),
+            self.device,
+        )
+        right_joint_pos = torch.clamp(right_joint_pos, self.right_arm_dof_lower_limits, self.right_arm_dof_upper_limits)
+        right_joint_vel = torch.zeros_like(right_joint_pos)
+        self._right_arm.set_joint_position_target(right_joint_pos, env_ids=env_ids)
+        self._right_arm.write_joint_state_to_sim(right_joint_pos, right_joint_vel, env_ids=env_ids)
 
-        # cabinet state
-        zeros = torch.zeros((len(env_ids), self._cabinet.num_joints), device=self.device)
-        self._cabinet.write_joint_state_to_sim(zeros, zeros, env_ids=env_ids)
+        # TODO: bottle state
+        # zeros = torch.zeros((len(env_ids), self._cabinet.num_joints), device=self.device)
+        # self._cabinet.write_joint_state_to_sim(zeros, zeros, env_ids=env_ids)
 
         # Need to refresh the intermediate values so that _get_observations() can use the latest values
         self._compute_intermediate_values(env_ids)
         
     def _get_observations(self) -> dict:
+        # left arm
+        left_arm_dof_pos_scaled = (
+            2.0
+            * (self._left_arm.data.joint_pos - self.left_arm_dof_lower_limits)
+            / (self.left_arm_dof_lower_limits - self.left_arm_dof_upper_limits)
+            - 1.0
+        )
+        # TODO: Heuristic function to compute the left arm position to target
+        left_arm_to_target = ...
+        
+        # right arm
+        right_arm_dof_pos_scaled = (
+            2.0
+            * (self._right_arm.data.joint_pos - self.right_arm_dof_lower_limits)
+            / (self.right_arm_dof_lower_limits - self.right_arm_dof_upper_limits)
+            - 1.0
+        )
+        # TODO: Heuristic function to compute the right arm position to target
+        right_arm_to_target = ...
+        
         obs = torch.cat(
             (
-                self.joint_pos[:, self._pole_dof_idx[0]].unsqueeze(dim=1),
-                self.joint_vel[:, self._pole_dof_idx[0]].unsqueeze(dim=1),
-                self.joint_pos[:, self._cart_dof_idx[0]].unsqueeze(dim=1),
-                self.joint_vel[:, self._cart_dof_idx[0]].unsqueeze(dim=1),
+                left_arm_dof_pos_scaled,
+                right_arm_dof_pos_scaled,
+                self._left_arm.data.joint_vel * self.cfg.dof_velocity_scale,
+                self._right_arm.data.joint_vel * self.cfg.dof_velocity_scale,
+                left_arm_to_target,
+                right_arm_to_target,
+                # TODO: bottle state
             ),
             dim=-1,
         )
-        observations = {"policy": obs}
+        
+        observations = {"policy": torch.clamp(obs, -5.0, 5.0)}
         return observations
 
+    # auxiliary methods
+    def _compute_intermediate_values(self, env_ids: torch.Tensor | None = None):
+        if env_ids is None:
+            raise ValueError("env_ids cannot be None")
+        
+        # TODO: compute intermediate values
+        # TODO: grasp pose variables for reward function
+        # TODO: twist pose variables for reward function
 
 
-
+# TODO: reward function
 @torch.jit.script
 def compute_rewards(
-    rew_scale_alive: float,
-    rew_scale_terminated: float,
-    rew_scale_pole_pos: float,
-    rew_scale_cart_vel: float,
-    rew_scale_pole_vel: float,
-    pole_pos: torch.Tensor,
-    pole_vel: torch.Tensor,
-    cart_pos: torch.Tensor,
-    cart_vel: torch.Tensor,
-    reset_terminated: torch.Tensor,
+    # rew_scale_alive: float,
+    # rew_scale_terminated: float,
+    # rew_scale_pole_pos: float,
+    # rew_scale_cart_vel: float,
+    # rew_scale_pole_vel: float,
+    # pole_pos: torch.Tensor,
+    # pole_vel: torch.Tensor,
+    # cart_pos: torch.Tensor,
+    # cart_vel: torch.Tensor,
+    # reset_terminated: torch.Tensor,
 ):
-    rew_alive = rew_scale_alive * (1.0 - reset_terminated.float())
-    rew_termination = rew_scale_terminated * reset_terminated.float()
-    rew_pole_pos = rew_scale_pole_pos * torch.sum(torch.square(pole_pos).unsqueeze(dim=1), dim=-1)
-    rew_cart_vel = rew_scale_cart_vel * torch.sum(torch.abs(cart_vel).unsqueeze(dim=1), dim=-1)
-    rew_pole_vel = rew_scale_pole_vel * torch.sum(torch.abs(pole_vel).unsqueeze(dim=1), dim=-1)
-    total_reward = rew_alive + rew_termination + rew_pole_pos + rew_cart_vel + rew_pole_vel
-    return total_reward
+    # rew_alive = rew_scale_alive * (1.0 - reset_terminated.float())
+    # rew_termination = rew_scale_terminated * reset_terminated.float()
+    # rew_pole_pos = rew_scale_pole_pos * torch.sum(torch.square(pole_pos).unsqueeze(dim=1), dim=-1)
+    # rew_cart_vel = rew_scale_cart_vel * torch.sum(torch.abs(cart_vel).unsqueeze(dim=1), dim=-1)
+    # rew_pole_vel = rew_scale_pole_vel * torch.sum(torch.abs(pole_vel).unsqueeze(dim=1), dim=-1)
+    # total_reward = rew_alive + rew_termination + rew_pole_pos + rew_cart_vel + rew_pole_vel
+    # return total_reward
