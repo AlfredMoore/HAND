@@ -221,11 +221,72 @@ class HandEnv(DirectRLEnv):
         targets = self.robot_dof_targets + self.robot_dof_speed_scales * self.dt * self.actions * self.cfg.action_scale
         self.robot_dof_targets[:] = torch.clamp(targets, self.robot_dof_lower_limits, self.robot_dof_upper_limits)
 
-
     def _apply_action(self) -> None:
         self.robot.set_joint_effort_target(self.actions * self.cfg.action_scale, joint_ids=self._cart_dof_idx)
 
 
+    # post-physics step calls
+    def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
+        # TODO: terminated logic. When succeed
+        terminated = ...
+        
+        # TODO: truncated logic
+        truncated = self.episode_length_buf >= self.max_episode_length - 1
+
+        return terminated, truncated
+
+    def _get_rewards(self) -> torch.Tensor:
+        # Refresh the intermediate values after the physics steps
+        self._compute_intermediate_values()
+
+        # TODO: reward function
+        reward, log = compute_rewards(
+            # self.actions,
+            # self._cabinet.data.joint_pos,
+            # self.robot_grasp_pos,
+            # self.drawer_grasp_pos,
+            # self.robot_grasp_rot,
+            # self.drawer_grasp_rot,
+            # robot_left_finger_pos,
+            # robot_right_finger_pos,
+            # self.gripper_forward_axis,
+            # self.drawer_inward_axis,
+            # self.gripper_up_axis,
+            # self.drawer_up_axis,
+            # self.num_envs,
+            # self.cfg.dist_reward_scale,
+            # self.cfg.rot_reward_scale,
+            # self.cfg.open_reward_scale,
+            # self.cfg.action_penalty_scale,
+            # self.cfg.finger_reward_scale,
+            # self._robot.data.joint_pos,
+        )
+        
+        self.extras["log"] = log
+        
+        return reward
+    
+    def _reset_idx(self, env_ids: torch.Tensor | None):
+        super()._reset_idx(env_ids)
+        # robot state
+        joint_pos = self._left_arm.data.default_joint_pos[env_ids] + sample_uniform(
+            -0.125,
+            0.125,
+            (len(env_ids), self._left_arm.num_joints),
+            self.device,
+        )
+        joint_pos = torch.clamp(joint_pos, self.robot_dof_lower_limits, self.robot_dof_upper_limits)
+        joint_vel = torch.zeros_like(joint_pos)
+        self._robot.set_joint_position_target(joint_pos, env_ids=env_ids)
+        self._robot.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+
+        # cabinet state
+        zeros = torch.zeros((len(env_ids), self._cabinet.num_joints), device=self.device)
+        self._cabinet.write_joint_state_to_sim(zeros, zeros, env_ids=env_ids)
+
+        # Need to refresh the intermediate values so that _get_observations() can use the latest values
+        self._compute_intermediate_values(env_ids)
+        
     def _get_observations(self) -> dict:
         obs = torch.cat(
             (
@@ -239,53 +300,7 @@ class HandEnv(DirectRLEnv):
         observations = {"policy": obs}
         return observations
 
-    def _get_rewards(self) -> torch.Tensor:
-        total_reward = compute_rewards(
-            self.cfg.rew_scale_alive,
-            self.cfg.rew_scale_terminated,
-            self.cfg.rew_scale_pole_pos,
-            self.cfg.rew_scale_cart_vel,
-            self.cfg.rew_scale_pole_vel,
-            self.joint_pos[:, self._pole_dof_idx[0]],
-            self.joint_vel[:, self._pole_dof_idx[0]],
-            self.joint_pos[:, self._cart_dof_idx[0]],
-            self.joint_vel[:, self._cart_dof_idx[0]],
-            self.reset_terminated,
-        )
-        return total_reward
 
-    def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
-        self.joint_pos = self.robot.data.joint_pos
-        self.joint_vel = self.robot.data.joint_vel
-
-        time_out = self.episode_length_buf >= self.max_episode_length - 1
-        out_of_bounds = torch.any(torch.abs(self.joint_pos[:, self._cart_dof_idx]) > self.cfg.max_cart_pos, dim=1)
-        out_of_bounds = out_of_bounds | torch.any(torch.abs(self.joint_pos[:, self._pole_dof_idx]) > math.pi / 2, dim=1)
-        return out_of_bounds, time_out
-
-    def _reset_idx(self, env_ids: Sequence[int] | None):
-        if env_ids is None:
-            env_ids = self.robot._ALL_INDICES
-        super()._reset_idx(env_ids)
-
-        joint_pos = self.robot.data.default_joint_pos[env_ids]
-        joint_pos[:, self._pole_dof_idx] += sample_uniform(
-            self.cfg.initial_pole_angle_range[0] * math.pi,
-            self.cfg.initial_pole_angle_range[1] * math.pi,
-            joint_pos[:, self._pole_dof_idx].shape,
-            joint_pos.device,
-        )
-        joint_vel = self.robot.data.default_joint_vel[env_ids]
-
-        default_root_state = self.robot.data.default_root_state[env_ids]
-        default_root_state[:, :3] += self.scene.env_origins[env_ids]
-
-        self.joint_pos[env_ids] = joint_pos
-        self.joint_vel[env_ids] = joint_vel
-
-        self.robot.write_root_pose_to_sim(default_root_state[:, :7], env_ids)
-        self.robot.write_root_velocity_to_sim(default_root_state[:, 7:], env_ids)
-        self.robot.write_joint_state_to_sim(joint_pos, joint_vel, None, env_ids)
 
 
 @torch.jit.script
