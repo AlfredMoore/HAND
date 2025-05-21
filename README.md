@@ -1,7 +1,7 @@
 # Isaac Simulation for HAND project
 
 ## Intro
-[Link]{https://isaac-sim.github.io/IsaacLab/main/source/setup/ecosystem.html}
+[Link](https://isaac-sim.github.io/IsaacLab/main/source/setup/ecosystem.html)
 
 Omniverse, Isaac Sim, Isaac Lab
 
@@ -16,16 +16,16 @@ cd <path to isaac-sim folder>
 ```
 
 ### 2. Isaac Sim
-Phycical simulation engine. [Installation]{https://docs.isaacsim.omniverse.nvidia.com/latest/installation/download.html}
+Phycical simulation engine. [Installation](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/download.html)
 
-Tutorial [Link]{https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/quickstart_isaacsim.html}
+Tutorial [Link](https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/quickstart_isaacsim.html)
 
 ### 3. Isaac Lab
-A RL platform built on Isaac Sim. It can be installde by pip or docker, and I recommend docker installation [Link]{https://isaac-sim.github.io/IsaacLab/main/source/deployment/docker.html}
+A RL platform built on Isaac Sim. It can be installde by pip or docker, and I recommend docker installation [Link](https://isaac-sim.github.io/IsaacLab/main/source/deployment/docker.html)
 
-How it works [Link]{https://isaac-sim.github.io/IsaacLab/main/source/overview/core-concepts/task_workflows.html}
+How it works [Link](https://isaac-sim.github.io/IsaacLab/main/source/overview/core-concepts/task_workflows.html)
 
-Build your own Env [Link]{https://isaac-sim.github.io/IsaacLab/main/source/tutorials/03_envs/create_direct_rl_env.html}
+Build your own Env [Link](https://isaac-sim.github.io/IsaacLab/main/source/tutorials/03_envs/create_direct_rl_env.html)
 
 # Progress
 ## Dexterous Manipulation
