@@ -23,13 +23,9 @@ from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 from isaaclab.utils.math import sample_uniform
 
-import importlib.util
-import os
-spec = importlib.util.find_spec("HAND")
-ASSETS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(spec.origin)))),
-    "assets"
-)
+from HAND.tasks.direct.hand.hand_utils import ASSETS_DIR
+# from .hand_utils import ASSETS_DIR
+
 ARM_DIS: float = 1.2
 # Scene parameters
 NUM_ENVS: int = 4096

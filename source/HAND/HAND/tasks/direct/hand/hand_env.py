@@ -14,17 +14,21 @@ from isaacsim.core.utils.torch.transformations import tf_combine, tf_inverse, tf
 from pxr import UsdGeom
 
 import isaaclab.sim as sim_utils
+
 from isaaclab.actuators.actuator_cfg import ImplicitActuatorCfg
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sim import SimulationCfg
+from isaaclab.sim.converters import UrdfConverter, UrdfConverterCfg
 from isaaclab.sim.spawners.from_files import GroundPlaneCfg, spawn_ground_plane
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.math import sample_uniform
 
 from .hand_env_cfg import HandEnvCfg
+# from HAND.tasks.direct.hand.hand_env_cfg import HandEnvCfg, ARM_DIS, ASSETS_DIR
+from HAND.tasks.direct.hand.hand_utils import ASSETS_DIR, AssetManager
 
 
 class HandEnv(DirectRLEnv):
@@ -361,3 +365,4 @@ def compute_rewards(
     # rew_pole_vel = rew_scale_pole_vel * torch.sum(torch.abs(pole_vel).unsqueeze(dim=1), dim=-1)
     # total_reward = rew_alive + rew_termination + rew_pole_pos + rew_cart_vel + rew_pole_vel
     # return total_reward
+    pass
