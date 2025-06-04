@@ -27,6 +27,15 @@ How it works [Link](https://isaac-sim.github.io/IsaacLab/main/source/overview/co
 
 Build your own Env [Link](https://isaac-sim.github.io/IsaacLab/main/source/tutorials/03_envs/create_direct_rl_env.html)
 
+### 4. View the Env
+In your Isaac Lab docker environment or python virtual environment, run
+```bash
+python3 <path_to_HAND>/scripts/minimal_viewer.py
+```
+
+You can also customize your own env and edit by all the configuration instance in `class InteractiveSceneCfg`.
+
+
 # Progress
 ## Dexterous Manipulation
 - [x] Setting up Scenario 
