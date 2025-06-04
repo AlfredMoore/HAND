@@ -7,7 +7,7 @@ from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(
     description="This script demonstrates adding a custom robot to an Isaac Lab environment."
 )
-parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
+parser.add_argument("--num_envs", type=int, default=2, help="Number of environments to spawn.")
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
@@ -37,6 +37,7 @@ cfg = HandEnvCfg()
 left_arm = cfg.left_arm
 right_arm = cfg.right_arm
 workstation = cfg.workstation
+bottle = cfg.bottle
 
 class NewRobotsSceneCfg(InteractiveSceneCfg):
     """Designs the scene."""
@@ -54,7 +55,7 @@ class NewRobotsSceneCfg(InteractiveSceneCfg):
     right_arm = right_arm.replace(prim_path="{ENV_REGEX_NS}/RightArm")
 
     workstation = workstation.replace(prim_path="{ENV_REGEX_NS}/Workstation")
-
+    bottle = bottle.replace(prim_path="{ENV_REGEX_NS}/Bottle")
     # cfg = HandEnvCfg()
 
 def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):

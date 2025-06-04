@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 import torch
 
 import isaaclab.sim as sim_utils
@@ -18,13 +19,14 @@ from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg, RigidOb
 from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sim import SimulationCfg
+from isaaclab.sim.spawners.wrappers import MultiUsdFileCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 from isaaclab.utils.math import sample_uniform
 
-from HAND.tasks.direct.hand.hand_utils import ASSETS_DIR
-# from .hand_utils import ASSETS_DIR
+from HAND.tasks.direct.hand.hand_utils import ASSETS_DIR, AssetManager
+
 
 ARM_DIS: float = 1.2
 # Scene parameters
@@ -211,6 +213,53 @@ class HandEnvCfg(DirectRLEnvCfg):
         },
     )
 
+    # bottle
+    bottle_init_pos = (0.0, 0.0, workstation_size[2]+0.01)
+    bottle_init_rot = (0.0, 0.0, 0.0, 1.0)
+    
+    bottle = ArticulationCfg(
+        prim_path="{ENV_REGEX_NS}/Bottle",
+        spawn=MultiUsdFileCfg(
+            usd_path=AssetManager(
+                asset_root=ASSETS_DIR, 
+                model_root_path="bottle"
+            ).get_usd_files(),
+            random_choice=True,
+            activate_contact_sensors=False,
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(
+            disable_gravity=False,
+            max_depenetration_velocity=5.0,
+            ),
+            articulation_props=sim_utils.ArticulationRootPropertiesCfg(
+                enabled_self_collisions=False, solver_position_iteration_count=12, solver_velocity_iteration_count=1
+            ),
+        ),
+        init_state=ArticulationCfg.InitialStateCfg(
+            pos=bottle_init_pos,
+            rot=bottle_init_rot,
+            joint_pos={
+                "b_joint": 0.0,
+                "brake_joint": 0.0,
+            },
+        ),
+        actuators={
+            "lid": ImplicitActuatorCfg(
+                joint_names_expr=["b_joint"],
+                effort_limit=87.0,
+                velocity_limit=100.0,
+                stiffness=10.0,
+                damping=1.0,
+            ),
+            "brake": ImplicitActuatorCfg(
+                joint_names_expr=["brake_joint"],
+                effort_limit=87.0,
+                velocity_limit=100.0,
+                stiffness=10.0,
+                damping=1.0,
+            ),
+        },
+    )
+    
     # ground plane
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",

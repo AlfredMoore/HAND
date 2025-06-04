@@ -173,15 +173,13 @@ class HandEnv(DirectRLEnv):
         # Articulation
         self._right_arm = Articulation(self.cfg.right_arm)
         self._left_arm = Articulation(self.cfg.left_arm)
-        # TODO: bottle articulation
-        # self._bottle = Articulation(self.cfg.bottle)
-        # Rigid objects
-        self._workstation = RigidObject(self.cfg.workstation)
-        
+        self._bottle = Articulation(self.cfg.bottle)
         self.scene.articulations["right_arm"] = self._right_arm
         self.scene.articulations["left_arm"] = self._left_arm
-        # TODO
-        # self.scene.articulations["bottle"] = self._bottle
+        self.scene.articulations["bottle"] = self._bottle
+        
+        # Rigid objects
+        self._workstation = RigidObject(self.cfg.workstation)
         self.scene.rigid_objects["workstation"] = self._workstation
 
         # terrain
@@ -290,7 +288,7 @@ class HandEnv(DirectRLEnv):
         self._right_arm.set_joint_position_target(right_joint_pos, env_ids=env_ids)
         self._right_arm.write_joint_state_to_sim(right_joint_pos, right_joint_vel, env_ids=env_ids)
 
-        # TODO: bottle state
+        # TODO: randomize bottle state (pos)
         # zeros = torch.zeros((len(env_ids), self._cabinet.num_joints), device=self.device)
         # self._cabinet.write_joint_state_to_sim(zeros, zeros, env_ids=env_ids)
 
