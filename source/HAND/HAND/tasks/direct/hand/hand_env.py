@@ -150,19 +150,21 @@ class HandEnv(DirectRLEnv):
         
         # Potentially useful variable for reward function
         self.left_arm_ee_link_idx = self._left_arm.find_bodies("panda_link7")[0][0]
-        self.left_gripper_base = self._left_arm.find_bodies("l_dg_mount")[0][0]
+        self.left_gripper_base_link_idx = self._left_arm.find_bodies("l_dg_mount")[0][0]
         self.left_gripper_finger1_link_idx = self._left_arm.find_bodies("l_1_4")[0][0]
         self.left_gripper_finger2_link_idx = self._left_arm.find_bodies("l_2_4")[0][0]
         self.left_gripper_finger3_link_idx = self._left_arm.find_bodies("l_3_4")[0][0]
         
         self.right_arm_ee_link_idx = self._right_arm.find_bodies("panda_link7")[0][0]
-        self.right_gripper_base = self._right_arm.find_bodies("l_dg_mount")[0][0]
+        self.right_gripper_base_link_idx = self._right_arm.find_bodies("l_dg_mount")[0][0]
         self.right_gripper_finger1_link_idx = self._right_arm.find_bodies("l_1_4")[0][0]
         self.right_gripper_finger2_link_idx = self._right_arm.find_bodies("l_2_4")[0][0]
         self.right_gripper_finger3_link_idx = self._right_arm.find_bodies("l_3_4")[0][0]
         
-        # TODO: bottle articulation
-        # self.bottle_link_idx = self._bottle.find_bodies("bottle")[0][0]
+        # Bottle articulation
+        self.bottle_brake_link_idx = self._bottle.find_bodies("brake")[0][0]
+        self.bottle_link1_idx = self._bottle.find_bodies("link1")[0][0]
+        self.bottle_link2_idx = self._bottle.find_bodies("link2")[0][0]
         
         # TODO: grasp, hold, twist
         
@@ -201,6 +203,8 @@ class HandEnv(DirectRLEnv):
         # actions: (left_arm+right_arm , )
         self.actions = actions.clone().clamp(-1.0, 1.0)
         
+        # TODO: Smooth action with EMA 0.75 
+        
         # left_arm
         left_arm_actions = self.actions[:, :self._left_arm.num_dofs]
         left_arm_targets = self.left_arm_dof_targets + self.left_arm_dof_speed_scales * self.dt * left_arm_actions * self.cfg.action_scale
@@ -221,10 +225,10 @@ class HandEnv(DirectRLEnv):
 
     # post-physics step calls
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
-        # TODO: terminated logic. When succeed, the bottle has been twist off
+        # TODO: terminated state, bottle is twist off
         terminated = ...
         
-        # TODO: truncated logic
+        # Truncated logic
         truncated = self.episode_length_buf >= self.max_episode_length - 1
 
         return terminated, truncated
